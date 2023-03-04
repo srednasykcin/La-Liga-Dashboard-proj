@@ -15,7 +15,7 @@ today = datetime.datetime.today()
 # if datetime.datetime.weekday(today) == 0 and today.strftime('%x') != '02/20/23':
 
 if today8am < now < today11am:
-    message = 'I am just here to give a late-season update on the La Liga rankings!'
+    message = 'Can bots be drunk? I feel funny.'
     data = {
         'bot_id': 'BOT ID',
         'text': message

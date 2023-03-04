@@ -17,6 +17,7 @@ options.add_experimental_option("detach", True)
 class LaLigaStandingsBot:
     def __init__(self):
         # Set bot_id, access token, GroupMe and image upload endpoints, image path, chrome driver, preamble list
+        self.image_response = None
         self.bot_id = os.environ['bot_id']
         self.GROUPME_ACCESS_TOKEN = os.environ['GROUPME_ACCESS_TOKEN']
         self.ESPN_LOGIN = os.environ['ESPN_LOGIN']
@@ -40,21 +41,19 @@ class LaLigaStandingsBot:
         self.driver.switch_to.frame('disneyid-iframe')
         login = self.driver.find_element(by=By.XPATH,
                                          value='/html/body/div[1]/div/div/section/section/form/section/div[1]/div/label/span[2]/input')
-        # login.click()
         login.send_keys(self.ESPN_LOGIN)
         pwd = self.driver.find_element(by=By.XPATH,
                                        value='/html/body/div[1]/div/div/section/section/form/section/div[2]/div/label/span[2]/input')
-        # pwd.click()
         pwd.send_keys(self.ESPN_PWD, Keys.ENTER)
-        time.sleep(3)
+        time.sleep(4)
 
     def screenshot_standings(self):
-        time.sleep(2)
         self.driver.switch_to.parent_frame()
-        self.driver.find_element(by=By.TAG_NAME, value="body").send_keys(Keys.ARROW_DOWN, Keys.ARROW_DOWN)
-        time.sleep(1)
         standings = self.driver.find_element(by=By.XPATH,
-                                             value='/html/body/div[1]/div[1]/div/div/div[5]/div[2]/div[2]/div[3]/div[2]')
+                                             value='/html/body/div[1]/div[1]/div/div/div[5]/div[2]/div[2]/div[3]/div[2]/div')
+        self.driver.execute_script("arguments[0].scrollIntoView();", standings)
+        self.driver.execute_script("window.scrollBy(0,-100)", "")
+        time.sleep(1)
         standings.screenshot(f'la_liga_standings.png')
 
     # Get image from GroupMe's Image Service
@@ -79,8 +78,8 @@ class LaLigaStandingsBot:
         else:
             print(f'Error uploading image: {self.image_response.status_code}')
 
+    # Post img to group with BizBot
     def post_image(self):
-        # Post img to group with BizBot
         group_msg_payload = {
             'bot_id': self.bot_id,
             'text': f'{random.choice(self.standings_preamble_list)}\n',
@@ -105,5 +104,3 @@ class LaLigaStandingsBot:
 # standings_bot.screenshot_standings()
 # standings_bot.get_image_url()
 # standings_bot.post_image()
-#
-#

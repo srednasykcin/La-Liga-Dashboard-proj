@@ -3,8 +3,7 @@ import requests
 import datetime
 import os
 
-# SWID = os.environ['SWID']
-# espn_s2 = os.environ['espn_s2']
+
 GroupMe_URL = 'https://api.groupme.com/v3/bots/post'
 
 league = League(league_id=197496, year=2023, espn_s2=os.environ['espn_s2'], swid=os.environ['SWID'])
@@ -14,6 +13,10 @@ box = league.box_scores(matchup_period=week, scoring_period=week, matchup_total=
 
 class LaLigaPerformersBot:
     def __init__(self):
+        self.away_stat = None
+        self.home_stat = None
+        self.home_team = None
+        self.away_team = None
         self.counting_stat_categories = {'PTS': {}, 'BLK': {}, 'STL': {}, 'AST': {}, 'REB': {}, 'TO': {}, 'FGM': {},
                                          'FGA': {}, 'FTM': {}, 'FTA': {}, '3PTM': {}, 'FG%': {}, 'FT%': {}}
         self.pct_stat_categories = {'FG%': {}, 'FT%': {}}
@@ -21,30 +24,34 @@ class LaLigaPerformersBot:
         self.master_cat_dict = dict()
         self.bot_id = os.environ['bot_id']
 
+    def assign_home_vars(self, matchup, stat):
+        self.home_team = str(box[matchup].home_team).replace('Team(', '').replace(')', '')
+        self.home_stat = float(box[matchup].home_stats[stat]['value'])
+
+    def assign_away_vars(self, matchup, stat):
+        self.away_team = str(box[matchup].away_team).replace('Team(', '').replace(')', '')
+        self.away_stat = float(box[matchup].away_stats[stat]['value'])
+
     def create_master_dict(self):
         for matchup in range(5):
             for stat in self.counting_stat_categories.keys():  # counting stats
-                # home team formatting and dict update
-                home_team = str(box[matchup].home_team).replace('Team(', '').replace(')', '')
-                home_stat = format(float(box[matchup].home_stats[stat]['value']), '.0f')
-                self.counting_stat_categories[stat][home_team] = home_stat
+                # home team formatting + dict update
+                self.assign_home_vars(matchup=matchup, stat=stat)
+                self.counting_stat_categories[stat][self.home_team] = int(format(self.home_stat, '.0f'))
 
-                # away team formatting and dict update
-                away_team = str(box[matchup].away_team).replace('Team(', '').replace(')', '')
-                away_stat = format(float(box[matchup].away_stats[stat]['value']), '.0f')
-                self.counting_stat_categories[stat][away_team] = away_stat
+                # away team formatting + dict update
+                self.assign_away_vars(matchup=matchup, stat=stat)
+                self.counting_stat_categories[stat][self.away_team] = int(format(self.away_stat, '.0f'))
             self.master_cat_dict.update(self.counting_stat_categories)
 
             for stat in self.pct_stat_categories.keys():  # percentage stats
-                # home team formatting and dict update
-                home_team = str(box[matchup].home_team).replace('Team(', '').replace(')', '')
-                home_stat = round(float(box[matchup].home_stats[stat]['value']) * 100, 3)
-                self.pct_stat_categories[stat][home_team] = home_stat
+                # home team formatting + dict update
+                self.assign_home_vars(matchup=matchup, stat=stat)
+                self.pct_stat_categories[stat][self.home_team] = round(self.home_stat * 100, 3)
 
-                # away team formatting and dict update
-                away_team = str(box[matchup].away_team).replace('Team(', '').replace(')', '')
-                away_stat = round(float(box[matchup].away_stats[stat]['value']) * 100, 3)
-                self.pct_stat_categories[stat][away_team] = away_stat
+                # away team formatting + dict update
+                self.assign_away_vars(matchup=matchup, stat=stat)
+                self.pct_stat_categories[stat][self.away_team] = round(self.away_stat * 100, 3)
             self.master_cat_dict.update(self.pct_stat_categories)
 
     def post_top_performers(self):
@@ -78,4 +85,7 @@ class LaLigaPerformersBot:
             print(response.text)
         print(messages)
 
-# print(master_cat_dict)
+
+# performers_bot = LaLigaPerformersBot()
+# performers_bot.create_master_dict()
+# performers_bot.post_top_performers()
